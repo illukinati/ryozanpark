@@ -13,22 +13,110 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => new _MainScreenState();
 }
 
+enum Answer { YES, NO }
+
 class _MainScreenState extends State<MainScreen> {
+  var facilities = [
+    "available",
+    "available",
+    "available",
+    "available",
+    "available",
+    "available",
+    "available",
+    "available",
+    "available",
+    "available"
+  ];
+  var colorFacilities = [
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400],
+    Colors.green[400]
+  ];
+
+  var nameFacilites = ["", "", "", "", "", "", "", "", "", ""];
 
   Future<String> getData() async {
     http.Response response = await http.get(
-        Uri.encodeFull(
-            "http://puskesmasdampit.com/rzp/service_watch.php"),
+        Uri.encodeFull("http://puskesmasdampit.com/rzp/service_watch.php"),
         headers: {"Accept": "application/json"});
 
     var resBody = JSON.decode(response.body);
+    setState(() {
+      for (int i = 0; i < facilities.length; i++) {
+        if (resBody[i]["status"] == "available") {
+          facilities[i] = "利用可能";
+          colorFacilities[i] = Colors.green[400];
+          nameFacilites[i] = "";
+        } else {
+          facilities[i] = "利用不可";
+          colorFacilities[i] = Colors.red[400];
+          nameFacilites[i] = resBody[i]["user"];
+        }
+      }
+    });
     return 'Success!!';
   }
 
+  Future<String> changeStatus(int id, String status) async {
+    http.Response response = await http.get(
+        Uri.encodeFull(
+            "http://puskesmasdampit.com/rzp/service_room.php?id_room=$id&username=${widget.name}"),
+        headers: {"Accept": "application.json"});
+
+    var resBody = JSON.decode(response.body);
+    setState(() {
+          facilities[id - 1] = resBody["status"];
+        });  
+    await getData();
+    return "Successs";
+  }
+  
+  Future<Null> _askUser(int id) async {
+    String status = (this.facilities[id - 1] == "利用可能") ? "on" : "off";
+    switch (await showDialog(
+      context: context,
+      child: new SimpleDialog(
+        title: new Text("Do you want to turn it $status ?"),
+        children: <Widget>[
+          new SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context, Answer.YES);
+            },
+            child: const Text("Yes"),
+          ),
+          new SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context, Answer.NO);
+            },
+            child: const Text("No"),
+          )
+        ],
+      ),
+    )) {
+      case Answer.YES:
+        {
+          changeStatus(id, status);
+          break;
+        }
+      case Answer.NO:
+        {
+          break;
+        }
+    }
+  }
+
   @override
-  void initState(){
-    super.initState();
+  void initState() {
     getData();
+    super.initState();
   }
 
   @override
@@ -73,13 +161,18 @@ class _MainScreenState extends State<MainScreen> {
                             ),
                             new Expanded(
                               flex: 1,
-                              child: new Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    0.0, 10.0, 10.0, 0.0),
-                                alignment: Alignment.centerRight,
-                                child: new Icon(
-                                  Icons.refresh,
-                                  color: Colors.white,
+                              child: new InkWell(
+                                onTap: () {
+                                  getData();
+                                },
+                                child: new Container(
+                                  margin: const EdgeInsets.fromLTRB(
+                                      0.0, 10.0, 10.0, 0.0),
+                                  alignment: Alignment.centerRight,
+                                  child: new Icon(
+                                    Icons.refresh,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             )
@@ -104,10 +197,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "1",
-                                    itemColor: Colors.green[400],
-                                    available: "利用可能",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(1),
+                                    child: new ItemFacility(
+                                      number: "1",
+                                      itemColor: this.colorFacilities[0],
+                                      available: this.facilities[0],
+                                      name: this.nameFacilites[0],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -116,10 +213,14 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "2",
-                                    itemColor: Colors.green[400],
-                                    available: "利用可能",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(2),
+                                    child: new ItemFacility(
+                                      number: "2",
+                                      itemColor: this.colorFacilities[1],
+                                      available: this.facilities[1],
+                                      name: this.nameFacilites[1],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -128,10 +229,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "3",
-                                    itemColor: Colors.green[400],
-                                    available: "利用可能",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(3),
+                                    child: new ItemFacility(
+                                      number: "3",
+                                      itemColor: this.colorFacilities[2],
+                                      available: this.facilities[2],
+                                      name: this.nameFacilites[2],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -140,10 +245,14 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "4",
-                                    itemColor: Colors.green[400],
-                                    available: "利用可能",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(4),
+                                    child: new ItemFacility(
+                                      number: "4",
+                                      itemColor: this.colorFacilities[3],
+                                      available: this.facilities[3],
+                                      name: this.nameFacilites[3],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -152,10 +261,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "5",
-                                    itemColor: Colors.red[400],
-                                    available: "利用不可",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(5),
+                                    child: new ItemFacility(
+                                      number: "5",
+                                      itemColor: this.colorFacilities[4],
+                                      available: this.facilities[4],
+                                      name: this.nameFacilites[4],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -237,10 +350,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "1",
-                                    itemColor: Colors.red[400],
-                                    available: "利用不可",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(6),
+                                    child: new ItemFacility(
+                                      number: "1",
+                                      itemColor: this.colorFacilities[5],
+                                      available: this.facilities[5],
+                                      name: this.nameFacilites[5],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -249,10 +366,14 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "2",
-                                    itemColor: Colors.green[400],
-                                    available: "利用可能",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(7),
+                                    child: new ItemFacility(
+                                      number: "2",
+                                      itemColor: this.colorFacilities[6],
+                                      available: this.facilities[6],
+                                      name: this.nameFacilites[6],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -261,10 +382,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "3",
-                                    itemColor: Colors.red[400],
-                                    available: "利用不可",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(8),
+                                    child: new ItemFacility(
+                                      number: "3",
+                                      itemColor: this.colorFacilities[7],
+                                      available: this.facilities[7],
+                                      name: this.nameFacilites[7],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -273,10 +398,14 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "4",
-                                    itemColor: Colors.red[400],
-                                    available: "利用不可",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(9),
+                                    child: new ItemFacility(
+                                      number: "4",
+                                      itemColor: this.colorFacilities[8],
+                                      available: this.facilities[8],
+                                      name: this.nameFacilites[8],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -285,10 +414,14 @@ class _MainScreenState extends State<MainScreen> {
                               children: <Widget>[
                                 new Expanded(
                                   flex: 1,
-                                  child: new ItemFacility(
-                                    number: "5",
-                                    itemColor: Colors.red[400],
-                                    available: "利用不可",
+                                  child: new GestureDetector(
+                                    onTap: () => _askUser(10),
+                                    child: new ItemFacility(
+                                      number: "5",
+                                      itemColor: this.colorFacilities[9],
+                                      available: this.facilities[9],
+                                      name: this.nameFacilites[9],
+                                    ),
                                   ),
                                 ),
                                 new Expanded(
@@ -324,7 +457,8 @@ class _MainScreenState extends State<MainScreen> {
                               child: new Image(
                                 width: 30.0,
                                 height: 30.0,
-                                image: new AssetImage("assets/images/guitar.png"),
+                                image:
+                                    new AssetImage("assets/images/guitar.png"),
                               ),
                             ),
                             new Container(
@@ -416,7 +550,17 @@ class ItemFacility extends StatelessWidget {
           new Text(
             this.available,
             style: new TextStyle(color: Colors.white),
-          )
+          ),
+          new Expanded(
+            flex: 1,
+            child: new Divider(),
+          ),
+          new Text(
+            this.name,
+            style: new TextStyle(
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
