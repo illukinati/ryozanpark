@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:ryozanpark/model/databaseHelper.dart';
+import 'package:ryozanpark/model/user.dart';
 import 'package:ryozanpark/screens/mainScreen.dart';
+import 'package:ryozanpark/screens/menuScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,6 +15,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   String _username = '';
   String _password = '';
+  var db = new DatabaseHelper();
+  var route = new MaterialPageRoute(
+    builder: (BuildContext context) => new MenuScreen(),
+  );
 
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -26,11 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     var resBody = JSON.decode(response.body);
     print(resBody[0]["username"]);
     if (resBody[0]["id"] != "0") {
-      var route = new MaterialPageRoute(
-        builder: (BuildContext context) => new MainScreen(
-              name: resBody[0]["username"],
-            ),
-      );
+      login();
       Navigator.pushAndRemoveUntil(
           context, route, (Route<dynamic> route) => false);
     } else {
@@ -49,9 +52,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<Null> login() async {
+    await db.saveUser(new User(_username, _password)).then((user) =>
+        db.getAllUsers().then((user) => user.forEach((note) => print(note))));
+  }
+
   @override
   void initState() {
     super.initState();
+    db.getCount().then((count) {
+      if (count > 0) {
+        Navigator.pushAndRemoveUntil(
+            context, route, (Route<dynamic> route) => false);
+      }
+    });
   }
 
   @override

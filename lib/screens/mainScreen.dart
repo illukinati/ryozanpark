@@ -3,12 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:ryozanpark/model/databaseHelper.dart';
+import 'package:ryozanpark/screens/loginScreen.dart';
 
 class MainScreen extends StatefulWidget {
-  final String name;
-
-  MainScreen({this.name});
-
   @override
   _MainScreenState createState() => new _MainScreenState();
 }
@@ -16,6 +14,12 @@ class MainScreen extends StatefulWidget {
 enum Answer { YES, NO }
 
 class _MainScreenState extends State<MainScreen> {
+  String username = "";
+  var db = new DatabaseHelper();
+  var route = new MaterialPageRoute(
+    builder: (BuildContext context) => new LoginScreen(),
+  );
+
   var facilities = [
     "available",
     "available",
@@ -43,6 +47,21 @@ class _MainScreenState extends State<MainScreen> {
 
   var nameFacilites = ["", "", "", "", "", "", "", "", "", ""];
 
+  @override
+  void initState() {
+    getData();
+    super.initState();
+    db.getCount().then((count) {
+      if (count > 0) {
+        db.getUser(1).then((user) {
+          setState(() {
+            this.username = user.username;
+          });
+        });
+      }
+    });
+  }
+
   Future<String> getData() async {
     http.Response response = await http.get(
         Uri.encodeFull("http://puskesmasdampit.com/rzp/service_watch.php"),
@@ -68,17 +87,24 @@ class _MainScreenState extends State<MainScreen> {
   Future<String> changeStatus(int id, String status) async {
     http.Response response = await http.get(
         Uri.encodeFull(
-            "http://puskesmasdampit.com/rzp/service_room.php?id_room=$id&username=${widget.name}"),
+            "http://puskesmasdampit.com/rzp/service_room.php?id_room=$id&username=${this.username}"),
         headers: {"Accept": "application.json"});
 
     var resBody = JSON.decode(response.body);
     setState(() {
-          facilities[id - 1] = resBody["status"];
-        });  
+      facilities[id - 1] = resBody["status"];
+    });
     await getData();
     return "Successs";
   }
-  
+
+  Future<Null> logout() async {
+    await db.deleteUser(this.username);
+    db.getAllUsers().then((user) => user.forEach((note) => print(note)));
+    Navigator.pushAndRemoveUntil(
+        context, route, (Route<dynamic> route) => false);
+  }
+
   Future<Null> _askUser(int id) async {
     String status = (this.facilities[id - 1] == "利用可能") ? "on" : "off";
     switch (await showDialog(
@@ -114,16 +140,23 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  void initState() {
-    getData();
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text("Ryozan Park Facilities"),
+        title: new Row(
+          children: <Widget>[
+            new Expanded(
+              flex: 1,
+              child: new Text("Ryozan Park"),
+            ),
+            new GestureDetector(
+              onTap: () => logout(),
+              child: new Container(
+                child: new Text(this.username),
+              ),
+            )
+          ],
+        ),
       ),
       body: new SingleChildScrollView(
         child: new Container(
